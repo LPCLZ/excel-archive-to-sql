@@ -1,0 +1,20 @@
+# Local Python environment and generated files
+.venv/
+__pycache__/
+*.pyc
+
+# Company archive and documents
+/data/
+/documents/
+
+# Local credentials
+.env
+.env.*
+
+# Learning checkpoints
+/scripts/*_phase.py
+/scripts/prepare_archive_test_BUTIMANU.py
+
+# Earlier SQL experiments
+/database/002_test.sql
+/database/004_temp.sql
