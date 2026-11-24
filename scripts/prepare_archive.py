@@ -109,118 +109,124 @@ def build_candidate_groups(row_records):
 
     return candidate_groups, unassigned_rows
 
+def save_and_verify_json(output_path, data):
+    with output_path.open("w", encoding="utf-8") as output_file:
+        json.dump(data, output_file, ensure_ascii=False, indent=2)
+    with output_path.open("r", encoding="utf-8") as input_file:
+        loaded_data = json.load(input_file)
+    if loaded_data != data:
+        raise ValueError("Final JSON verification failed: saved data does not match")
+    return loaded_data
 
-json_path = Path("C:/Users/Liviu/AB-Energy-Code/data/archive_full.json")
+def main():
 
-reviewed_source_hash = "0643737706a77608a9961c64547d664440d9abfeff0d90c83b515158c7497d4d"
-current_source_hash = hashlib.sha256(json_path.read_bytes()).hexdigest()
-if current_source_hash != reviewed_source_hash:
-    raise ValueError("Source JSON changed. Review project links before continuing.")
 
-with json_path.open("r", encoding="utf-8") as input_file:
-    archive_data = json.load(input_file)
+    json_path = Path("C:/Users/Liviu/AB-Energy-Code/data/archive_full.json")
 
-print("Worksheet:", archive_data["sheet_name"])
+    reviewed_source_hash = "0643737706a77608a9961c64547d664440d9abfeff0d90c83b515158c7497d4d"
+    current_source_hash = hashlib.sha256(json_path.read_bytes()).hexdigest()
+    if current_source_hash != reviewed_source_hash:
+        raise ValueError("Source JSON changed. Review project links before continuing.")
 
-# Organize cell records by their excel addresses.
-cells_by_coordinate = {}
+    with json_path.open("r", encoding="utf-8") as input_file:
+        archive_data = json.load(input_file)
 
-for record in archive_data["cells"]:
-    cells_by_coordinate[record["coordinate"]] = record
+    print("Worksheet:", archive_data["sheet_name"])
 
-print("Indexed cells:", len(cells_by_coordinate))
+    # Organize cell records by their excel addresses.
+    cells_by_coordinate = {}
 
-merged_sources = build_merged_sources(archive_data["merged_ranges"])
+    for record in archive_data["cells"]:
+        cells_by_coordinate[record["coordinate"]] = record
 
-prepared_cells = prepare_cells(archive_data["cells"], cells_by_coordinate, merged_sources)
+    print("Indexed cells:", len(cells_by_coordinate))
 
-print("Prepared cells:", len(prepared_cells))
+    merged_sources = build_merged_sources(archive_data["merged_ranges"])
 
-prepared_data = {
-    "source_file": archive_data["source_file"],
-    "source_json": json_path.name,
-    "sheet_name": archive_data["sheet_name"],
-    "cell_range": archive_data["cell_range"],
-    "cells": prepared_cells,
-}
+    prepared_cells = prepare_cells(archive_data["cells"], cells_by_coordinate, merged_sources)
 
-rows = group_cells_by_row(prepared_cells)
+    print("Prepared cells:", len(prepared_cells))
 
-print("Rows grouped:", len(rows))
+    prepared_data = {
+        "source_file": archive_data["source_file"],
+        "source_json": json_path.name,
+        "sheet_name": archive_data["sheet_name"],
+        "cell_range": archive_data["cell_range"],
+        "cells": prepared_cells,
+    }
 
-column_map = {
-    "A": "unlabeled_a",
-    "B": "project_text",
-    "C": "beneficiary_text",
-    "D": "beneficiary_ab_contracts",
-    "E": "operator_beneficiary_contracts",
-    "F": "operator_ab_inteligent_ss_contracts",
-    "G": "operator_invoices",
-    "H": "client_invoices_h",
-    "I": "client_invoices_i",
-    "J": "unlabeled_j",
-}
+    rows = group_cells_by_row(prepared_cells)
 
-named_rows = build_named_rows(rows, column_map)
+    print("Rows grouped:", len(rows))
 
-print("Named rows:", len(named_rows))
+    column_map = {
+        "A": "unlabeled_a",
+        "B": "project_text",
+        "C": "beneficiary_text",
+        "D": "beneficiary_ab_contracts",
+        "E": "operator_beneficiary_contracts",
+        "F": "operator_ab_inteligent_ss_contracts",
+        "G": "operator_invoices",
+        "H": "client_invoices_h",
+        "I": "client_invoices_i",
+        "J": "unlabeled_j",
+    }
 
-named_rows_data = {
-    "source_file": prepared_data["source_file"],
-    "source_json": json_path.name,
-    "sheet_name": prepared_data["sheet_name"],
-    "cell_range": prepared_data["cell_range"],
-    "column_map": column_map,
-    "rows": named_rows,
-}
+    named_rows = build_named_rows(rows, column_map)
 
-# Identify header rows and rows with no values or hyperlinks.
-header_row_numbers = [2,3]
-blank_row_numbers = []
+    print("Named rows:", len(named_rows))
 
-for named_row in named_rows_data["rows"]:
-    if is_blank_row(named_row):
-        blank_row_numbers.append(named_row["source_row"])
+    named_rows_data = {
+        "source_file": prepared_data["source_file"],
+        "source_json": json_path.name,
+        "sheet_name": prepared_data["sheet_name"],
+        "cell_range": prepared_data["cell_range"],
+        "column_map": column_map,
+        "rows": named_rows,
+    }
 
-print("Header rows:", header_row_numbers)
-print("Blank rows:", len(blank_row_numbers))
+    # Identify header rows and rows with no values or hyperlinks.
+    header_row_numbers = [2,3]
+    blank_row_numbers = []
 
-review_rows = select_review_rows(named_rows, header_row_numbers, blank_row_numbers)
+    for named_row in named_rows_data["rows"]:
+        if is_blank_row(named_row):
+            blank_row_numbers.append(named_row["source_row"])
 
-print("Rows for review:", len(review_rows))
+    print("Header rows:", header_row_numbers)
+    print("Blank rows:", len(blank_row_numbers))
 
-project_link_overrides = {
-    6: ["B4", "B5"],
-    20: ["B14"],
-    301:["B300"],
-}
+    review_rows = select_review_rows(named_rows, header_row_numbers, blank_row_numbers)
 
-linked_rows = apply_project_links(review_rows, project_link_overrides)
+    print("Rows for review:", len(review_rows))
 
-candidate_groups, unassigned_rows = build_candidate_groups(linked_rows)
+    project_link_overrides = {
+        6: ["B4", "B5"],
+        20: ["B14"],
+        301:["B300"],
+    }
 
-print("Candidate groups:", len(candidate_groups))
-print("Unassigned rows:", unassigned_rows)
+    linked_rows = apply_project_links(review_rows, project_link_overrides)
 
-# Save linked rows with their source metadata.
-linked_rows_data = named_rows_data.copy()
-linked_rows_data["rows"] = linked_rows
-linked_rows_data["candidate_groups"] = candidate_groups
-linked_rows_data["unassigned_rows"] = unassigned_rows
+    candidate_groups, unassigned_rows = build_candidate_groups(linked_rows)
 
-linked_output_path = json_path.with_name("archive_linked_rows.json")
+    print("Candidate groups:", len(candidate_groups))
+    print("Unassigned rows:", unassigned_rows)
 
-with linked_output_path.open("w", encoding="utf-8") as linked_output_file:
-    json.dump(linked_rows_data, linked_output_file, ensure_ascii=False, indent=2)
+    # Save linked rows with their source metadata.
+    linked_rows_data = named_rows_data.copy()
+    linked_rows_data["rows"] = linked_rows
+    linked_rows_data["candidate_groups"] = candidate_groups
+    linked_rows_data["unassigned_rows"] = unassigned_rows
 
-print("Linked rows JSON saved to:", linked_output_path)
+    linked_output_path = json_path.with_name("archive_linked_rows.json")
 
-# Reopen the linked rows JSON and compare its contents.
-with linked_output_path.open("r", encoding="utf-8") as linked_input_file:
-    loaded_linked_rows_data = json.load(linked_input_file)
+    loaded_linked_rows_data = save_and_verify_json(linked_output_path, linked_rows_data)
 
-if loaded_linked_rows_data != linked_rows_data:
-    raise ValueError("Final JSON verification failed: saved data does not match.")
+    print("Linked rows JSON saved to:", linked_output_path)
 
-print("Reloaded linked rows:", len(loaded_linked_rows_data["rows"]))
-print("Final JSON verification passed.")
+    print("Reloaded linked rows:", len(loaded_linked_rows_data["rows"]))
+    print("Final JSON verification passed.")
+
+if __name__ == "__main__":
+    main()
