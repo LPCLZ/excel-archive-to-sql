@@ -51,7 +51,7 @@ CREATE TABLE entities
     id INTEGER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
     entity_name TEXT NOT NULL CHECK
     (
-        entity_name IN ('A.B. INTELIGENT AX SRL' , 'A.B. INTELIGENT LM SRL')
+        entity_name IN ('Example Entity A' , 'Example Entity B')
     ),
     UNIQUE (entity_name)
 );
