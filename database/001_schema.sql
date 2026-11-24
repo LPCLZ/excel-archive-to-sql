@@ -1,11 +1,11 @@
--- Tabel beneficiari cu nume si id numeric
+-- Stores the names of project beneficiaries.
 CREATE TABLE beneficiaries
 (
     id INTEGER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
     beneficiary_name TEXT NOT NULL
 );
 
--- Tabel cu serviciile care pot fii prestate de catre AB Energy
+-- Lists the types of services available for a project.
 CREATE TABLE services
 (
     id INTEGER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
@@ -16,7 +16,7 @@ CREATE TABLE services
     UNIQUE (service_type)
 );
 
--- Tabel proiecte cu nume id numeric si beneficiari
+-- Stores project names and types.
 CREATE TABLE projects 
 (
     id INTEGER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
@@ -24,10 +24,10 @@ CREATE TABLE projects
     project_type TEXT CHECK
     (
         project_type IN ('CEF', 'CEM', 'CEE', 'IS', 'CHEAP','DATACENTER')
-    ),
-    beneficiary_id INTEGER NOT NULL REFERENCES beneficiaries(id)
+    )                                       
 );
 
+-- Links projects to beneficiaries, with one row per project and beneficiary pair.
 CREATE TABLE project_beneficiaries
 (
     id INTEGER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
@@ -36,6 +36,7 @@ CREATE TABLE project_beneficiaries
     UNIQUE (project_id, beneficiary_id)
 );
 
+-- Records which services are associated with each project.
 CREATE TABLE project_services
 (
     id INTEGER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
@@ -44,7 +45,7 @@ CREATE TABLE project_services
     UNIQUE (project_id, service_id)
 );
 
--- Tabel cu entitatile AB Energy ca sa stiu facturile pe care entitate au fost emise
+-- Lists the legal entities that issue documents.
 CREATE TABLE entities
 (
     id INTEGER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
@@ -55,7 +56,7 @@ CREATE TABLE entities
     UNIQUE (entity_name)
 );
 
--- Tabel contracte cu relatie la proiecte (pot fi mai multe contracte pe un singur proiect) cu tip, status, numar, data, subtip
+-- Stores document's type, number, date, and issuing entity.
 CREATE TABLE documents
 (
     id INTEGER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
@@ -66,6 +67,7 @@ CREATE TABLE documents
 
 );
 
+-- Links each document to the project it covers.
 CREATE TABLE document_projects
 (
     id INTEGER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
